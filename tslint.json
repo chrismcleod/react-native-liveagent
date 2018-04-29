@@ -1,0 +1,57 @@
+{
+  "extends": [
+    "tslint-config-airbnb",
+    "tslint-eslint-rules"
+  ],
+  "rules": {
+    "align": false,
+    "array-bracket-spacing": true,
+    "function-name": [
+      true,
+      {
+        "method-regex": "^[a-zA-Z][\\w\\d]+$",
+        "private-method-regex": "^[a-zA-Z][\\w\\d]+$"
+      }
+    ],
+    "import-name": false,
+    "quotemark": [
+      true,
+      "single",
+      "jsx-single"
+    ],
+    "object-curly-spacing": true,
+    "ordered-imports": [
+      true,
+      {
+        "import-sources-order": "lowercase-last",
+        "named-imports-order": "lowercase-last",
+        "grouped-imports": true
+      }
+    ],
+    "whitespace": {
+      "options": [
+        "check-branch",
+        "check-decl",
+        "check-module",
+        "check-operator",
+        "check-preblock",
+        "check-rest-spread",
+        "check-separator",
+        "check-type",
+        "check-type-operator",
+        "check-typecast"
+      ]
+    },
+    "max-line-length": {
+      "options": [
+        1000
+      ]
+    },
+    "variable-name": {
+      "options": [
+        "allow-leading-underscore",
+        "allow-pascal-case"
+      ]
+    }
+  }
+}

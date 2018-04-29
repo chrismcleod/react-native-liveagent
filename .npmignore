@@ -1,0 +1,17 @@
+.vscode
+src/
+android/
+ios/
+.babelrc
+.buckconfig
+.env
+.flowconfig
+.gitattributes
+.watchmanconfig
+app.json
+index.js
+tsconfig.json
+tslint.json
+yarn-error.log
+lib/example.js
+lib/index.js

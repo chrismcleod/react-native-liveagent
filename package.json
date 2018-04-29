@@ -1,0 +1,43 @@
+{
+  "name": "react-native-liveagent",
+  "version": "0.0.1",
+  "private": false,
+  "main": "lib/liveagent.js",
+  "types": "lib/liveagent.d.ts",
+  "scripts": {
+    "s": "node node_modules/react-native/local-cli/cli.js start",
+    "rs": "node node_modules/react-native/local-cli/cli.js start --reset-cache",
+    "c": "rm -rf ios/build && rm -rf android/build && xcrun simctl uninstall booted com.warebots.YellowHammer && (if [[ $(adb devices | sed -n '2p') ]]; then adb uninstall com.yellowhammer &>/dev/null || true; fi;)",
+    "s:a": "/Users/chris/Library/Android/sdk/tools/emulator -avd rnp2xl & (sleep 5 && react-native run-android)",
+    "s:6": "react-native run-ios --simulator=\"iPhone 6\"",
+    "s:8": "react-native run-ios --simulator=\"iPhone 8\"",
+    "s:x": "react-native run-ios --simulator=\"iPhone X\"",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "react": "~16",
+    "react-native": ">0.53.x"
+  },
+  "dependencies": {
+    "react-native-gifted-chat": "^0.4.3",
+    "rx-promise-queue": "0.0.1",
+    "rx-sfliveagent-client": "1.0.0",
+    "uuid": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/react-native": "^0.55.8",
+    "@types/uuid": "^3.4.3",
+    "babel-jest": "22.4.3",
+    "babel-preset-react-native": "4.0.0",
+    "jest": "22.4.3",
+    "react-native-config": "^0.11.5",
+    "react-test-renderer": "16.3.1",
+    "tslint": "^5.9.1",
+    "tslint-config-airbnb": "^5.8.0",
+    "tslint-eslint-rules": "^5.1.0",
+    "typescript": "^2.8.3"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
