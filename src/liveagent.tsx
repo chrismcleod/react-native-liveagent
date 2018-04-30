@@ -6,11 +6,13 @@ import { v4 } from 'uuid';
 
 import { Composer } from './composer';
 import * as style from './style';
+import { Subscription } from 'rxjs';
 
 export interface LiveagentProperties extends GiftedChatProps {
   config: LiveagentConfig;
   prechat: Requests.ChasitorInit;
   onChatEnded?: (reason: 'user' | 'agent') => any;
+  onChatError?: (error?: Error) => any;
   Unavailable?: React.ComponentType;
   strings?: {
     agentTyping?: (agent: User) => string;
@@ -65,8 +67,11 @@ export class Liveagent extends React.Component<LiveagentProperties, LiveagentSta
   private notTypingTimer: any;
   private isTyping: boolean = false;
   private queuedTimer: any;
+  private unmounting: boolean = false;
+  private subscriptions: Subscription[] = [];
 
   componentWillUnmount() {
+    this.unmounting = true;
     clearTimeout(this.queuedTimer);
     if (this.session) this.session.api.chatEnd();
   }
@@ -114,19 +119,25 @@ export class Liveagent extends React.Component<LiveagentProperties, LiveagentSta
     this.setState({ messages: [], text: '' });
     if (this.session) this.session.api.chatEnd();
     this.session = startSession(this.props.config, this.props.prechat);
-    this.session.chatEstablished$.subscribe(this.onChatEstablished);
-    this.session.chatRequestSuccess$.subscribe(this.onChatRequestSuccess);
-    this.session.chatRequestFail$.subscribe(this.onChatRequestFail);
-    this.session.chatMessage$.subscribe(this.onMessage);
-    this.session.chasitorChatMessage$.subscribe(this.onMessage);
-    this.session.agentTyping$.subscribe(() => this.onAgentTyping(true));
-    this.session.agentNotTyping$.subscribe(() => this.onAgentTyping(false));
-    this.session.chatEnd$.subscribe(() => this.chatEnded('user'));
-    this.session.chatEnded$.subscribe(() => this.chatEnded('agent'));
-    this.session.queueUpdate$.subscribe(this.onQueueUpdate);
+    this.subscriptions.push(this.session.chatEstablished$.subscribe(this.onChatEstablished));
+    this.subscriptions.push(this.session.chatRequestSuccess$.subscribe(this.onChatRequestSuccess));
+    this.subscriptions.push(this.session.chatRequestFail$.subscribe(this.onChatRequestFail));
+    this.subscriptions.push(this.session.chatMessage$.subscribe(this.onMessage));
+    this.subscriptions.push(this.session.chasitorChatMessage$.subscribe(this.onMessage));
+    this.subscriptions.push(this.session.agentTyping$.subscribe(() => this.onAgentTyping(true)));
+    this.subscriptions.push(this.session.agentNotTyping$.subscribe(() => this.onAgentTyping(false)));
+    this.subscriptions.push(this.session.chatEnd$.subscribe(() => this.onChatEnded('user')));
+    this.subscriptions.push(this.session.chatEnded$.subscribe(() => this.onChatEnded('agent')));
+    this.subscriptions.push(this.session.queueUpdate$.subscribe(this.onQueueUpdate));
+    this.subscriptions.push(this.session.error$.subscribe(error => this.props.onChatError && this.props.onChatError(error)));
   }
 
-  addSystemMessaage = (text: string) => {
+  endChat() {
+    if (this.session) this.session.api.chatEnd();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  addSystemMessage = (text: string) => {
     const message: any = {
       text,
       _id: v4(),
@@ -145,13 +156,13 @@ export class Liveagent extends React.Component<LiveagentProperties, LiveagentSta
       },
     }, () => {
       if (event.message.queuePosition > 0) {
-        this.queuedTimer = setTimeout(() => this.addSystemMessaage(this.string('userQueued', event.message.queuePosition)), 2000);
+        this.queuedTimer = setTimeout(() => this.addSystemMessage(this.string('userQueued', event.message.queuePosition)), 2000);
       }
     });
   }
 
   private onChatRequestFail = (event: Messages.ChatRequestFail) => {
-    this.chatEnded('agent');
+    this.onChatEnded('agent');
     if (event.message.reason === 'Unavailable') this.setState({ available: false });
   }
 
@@ -178,7 +189,13 @@ export class Liveagent extends React.Component<LiveagentProperties, LiveagentSta
       },
     };
     const nextMessages: IMessage[] = [ message ];
-    this.setState(previousState => ({ messages: nextMessages.concat(previousState.messages) }));
+    let agentTyping: Maybe<boolean> = undefined;
+    if (event.message.agentId === this.state.agent._id) {
+      agentTyping = false;
+    } else {
+      agentTyping = this.state.agentTyping;
+    }
+    this.setState(previousState => ({ agentTyping: !!agentTyping, messages: nextMessages.concat(previousState.messages) }));
   }
 
   private onChangeText = (text: string) => {
@@ -200,13 +217,15 @@ export class Liveagent extends React.Component<LiveagentProperties, LiveagentSta
 
   private onQueueUpdate = (event: Messages.QueueUpdate) => {
     if (event.message.position > 0) {
-      this.addSystemMessaage(this.string('queueUpdate', event.message.position));
+      this.addSystemMessage(this.string('queueUpdate', event.message.position));
     }
   }
 
-  private chatEnded = (reason: 'user' | 'agent') => {
-    this.addSystemMessaage(this.string('chatEnded', reason));
-    this.setState({ ended: true });
+  private onChatEnded = (reason: 'user' | 'agent') => {
+    if (this.unmounting === false) {
+      this.addSystemMessage(this.string('chatEnded', reason));
+      this.setState({ ended: true });
+    }
     if (this.props.onChatEnded) this.props.onChatEnded(reason);
   }
 
