@@ -15,3 +15,5 @@ tslint.json
 yarn-error.log
 lib/example.js
 lib/index.js
+lib/example.d.ts
+lib/index.d.ts
